@@ -27,6 +27,8 @@ from .errors import ApiError, ConfigError, RateLimitedError
 
 DEFAULT_BASE_URL = "https://lastwar.farm"
 API_KEY_ENV = "LASTWAR_FARM_API_KEY"
+#: Also accepted, in order, if API_KEY_ENV is unset (e.g. the cloud secret name).
+FALLBACK_KEY_ENVS = ("API_Key",)
 BASE_URL_ENV = "LASTWAR_FARM_BASE_URL"
 
 Entries = Iterable[Mapping[str, Any]]
@@ -64,7 +66,10 @@ class LastWarFarmClient:
     ) -> None:
         if dotenv_path:
             load_dotenv(dotenv_path)
-        self.api_key = api_key or os.environ.get(API_KEY_ENV)
+        self.api_key = api_key or next(
+            (os.environ[n] for n in (API_KEY_ENV, *FALLBACK_KEY_ENVS) if os.environ.get(n)),
+            None,
+        )
         if not self.api_key:
             raise ConfigError(
                 f"No API key. Pass api_key=... or set {API_KEY_ENV} "
@@ -97,7 +102,9 @@ class LastWarFarmClient:
 
         hdrs = {
             "Authorization": f"Bearer {self.api_key}",
-            "Accept": "application/json, text/csv",
+            # The server honours Accept over ?format=, and picks CSV if both
+            # types are listed, so ask for exactly one.
+            "Accept": "text/csv" if query.get("format") == "csv" else "application/json",
             "User-Agent": f"lastwar-farm-python/{__version__}",
         }
         data: Optional[bytes] = None

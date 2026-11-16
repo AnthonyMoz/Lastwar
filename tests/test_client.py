@@ -73,7 +73,8 @@ class ClientTests(unittest.TestCase):
 
     def test_missing_key(self):
         import os
-        os.environ.pop("LASTWAR_FARM_API_KEY", None)
+        saved = {n: os.environ.pop(n, None) for n in ("LASTWAR_FARM_API_KEY", "API_Key")}
+        self.addCleanup(lambda: [os.environ.__setitem__(k, v) for k, v in saved.items() if v])
         with self.assertRaises(ConfigError):
             LastWarFarmClient(base_url=self.base, dotenv_path=None)
 
@@ -84,6 +85,12 @@ class ClientTests(unittest.TestCase):
 
     def test_csv_response_returned_as_text(self):
         self.assertTrue(self.client.list_members(format="csv").startswith("memberId,name"))
+        self.assertEqual(FakeApi.calls[0]["headers"]["Accept"], "text/csv")
+
+    def test_default_accept_is_json_only(self):
+        # The real server returns CSV if text/csv appears anywhere in Accept.
+        self.client.list_members()
+        self.assertEqual(FakeApi.calls[0]["headers"]["Accept"], "application/json")
 
     def test_error_code_parsed(self):
         with self.assertRaises(ApiError) as cm:

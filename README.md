@@ -3,6 +3,10 @@
 Python client for the [lastwar.farm](https://lastwar.farm) (FarmOps) Public API v1.
 No third-party dependencies; Python 3.9+.
 
+Our alliance: **Reborn in Strength** (slug `kingbob`), public page
+<https://kingbob.lastwar.farm>. That subdomain is only the public page; the API
+is always called at `https://lastwar.farm/api/v1/...`.
+
 ## Setup
 
 1. Get an API key (`fops_live_...`):
@@ -10,8 +14,9 @@ No third-party dependencies; Python 3.9+.
      Needs Alliance Pro plus Auto Sync.
    - **Server key**: the server's **API Access** page (always `READ`).
      Needs Server Pro or a trial.
-2. `cp .env.example .env` and paste the key into `LASTWAR_FARM_API_KEY`.
-   `.env` is git-ignored.
+2. Provide the key. In Claude cloud sessions it is already stored as the
+   `API_Key` secret and is picked up automatically. Locally, `cp .env.example .env`
+   and paste the key into `LASTWAR_FARM_API_KEY` (`.env` is git-ignored).
 3. Check the connection:
 
    ```sh
@@ -27,7 +32,7 @@ Optional: `pip install -e .` adds a `lastwar-farm` command.
 ```python
 from lastwar_farm import LastWarFarmClient, ApiError
 
-client = LastWarFarmClient()          # reads LASTWAR_FARM_API_KEY from env / .env
+client = LastWarFarmClient()          # reads LASTWAR_FARM_API_KEY or API_Key from env / .env
 
 # Alliance key
 info = client.get_alliance()
