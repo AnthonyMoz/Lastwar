@@ -25,7 +25,7 @@ from typing import Any, Dict, Iterable, List, Mapping, Optional, Union
 from . import __version__
 from .errors import ApiError, ConfigError, RateLimitedError
 
-DEFAULT_BASE_URL = "https://lastwar.farm"
+DEFAULT_BASE_URL = "https://www.lastwar.farm"  # host used by /docs/api
 API_KEY_ENV = "LASTWAR_FARM_API_KEY"
 #: Also accepted, in order, if API_KEY_ENV is unset (e.g. the cloud secret name).
 FALLBACK_KEY_ENVS = ("API_Key",)
@@ -82,6 +82,9 @@ class LastWarFarmClient:
         self.max_retries = max_retries
         #: Rate-limit headers from the most recent response.
         self.rate_limit: Dict[str, Optional[str]] = {}
+        #: All headers from the most recent response (e.g. X-Next-Cursor on CSV).
+        #: Case-insensitive: ``client.last_headers.get("x-next-cursor")`` works.
+        self.last_headers: Any = {}
 
     # ------------------------------------------------------------------ core
 
@@ -135,6 +138,7 @@ class LastWarFarmClient:
     def _record_limits(self, headers: Any) -> None:
         if headers is None:
             return
+        self.last_headers = headers
         self.rate_limit = {
             "minute": headers.get("X-RateLimit-Remaining-Minute"),
             "day": headers.get("X-RateLimit-Remaining-Day"),
@@ -247,7 +251,19 @@ class LastWarFarmClient:
     def export_train_history(self, limit: Optional[int] = None,
                              before: Optional[str] = None,
                              format: Optional[str] = None) -> Any:
+        """One page (up to 100 dates), newest first. ``before`` is an exclusive
+        YYYY-MM-DD cursor. JSON pages carry ``meta.nextCursor``; for CSV read
+        ``client.last_headers.get("X-Next-Cursor")`` afterwards."""
         return self._get("/api/v1/alliance/train/history", limit=limit, before=before, format=format)
+
+    def iter_train_history(self, before: Optional[str] = None):
+        """Yield every historical Train date record, newest first."""
+        while True:
+            resp = self.export_train_history(limit=100, before=before)
+            yield from _items(resp)
+            before = (resp.get("meta") or {}).get("nextCursor") if isinstance(resp, dict) else None
+            if not before:
+                return
 
     # --------------------------------------------- alliance imports (WRITE)
     # Each entry identifies a member by ``memberId`` (preferred, exact) or
@@ -305,18 +321,32 @@ class LastWarFarmClient:
         return self._import(f"/api/v1/alliance/custom-events/{_q(event_id)}/entries",
                             body, csv, params=meta if csv is not None else None)
 
-    def import_train_history(self, entries: List[Mapping[str, Any]], preview: bool = False,
-                             idempotency_key: Optional[str] = None) -> Any:
+    def import_train_history(self, entries: Optional[List[Mapping[str, Any]]] = None,
+                             preview: bool = False,
+                             idempotency_key: Optional[str] = None,
+                             csv: Optional[str] = None) -> Any:
         """Import (or ``preview=True`` dry-run) historical Train rosters.
 
-        Each entry needs ``expectedVersion`` (``None`` = create-only). Retrying
-        with the same ``idempotency_key`` is safe; one is generated if omitted.
+        Pass JSON ``entries`` (members by ID only) or ``csv`` text as exported
+        by ``export_train_history(format="csv")`` (IDs or exact names).
+        Each date replaces its whole roster. Existing dates need their current
+        exported version; a null/blank version means create-only, and a stale
+        one rejects the whole batch (STALE_ENTRY). Limits: 2 MiB, 100 dates,
+        2,300 occupied seats. Needs a WRITE key whose creator is still an
+        owner, admin or manager.
+
+        Retry a failed commit with the *same* ``idempotency_key`` and payload;
+        reusing a committed key with a different payload is REQUEST_CONFLICT.
+        One is generated if omitted, so pass your own if you may retry.
         """
+        if (entries is None) == (csv is None):
+            raise ValueError("pass exactly one of entries= or csv=")
         key = idempotency_key or f"lwf-{uuid.uuid4().hex}"
         return self.request(
             "POST", "/api/v1/alliance/train/history",
-            params={"preview": preview}, json_body={"entries": list(entries)},
-            headers={"Idempotency-Key": key},
+            params={"preview": preview},
+            json_body={"entries": list(entries)} if entries is not None else None,
+            csv_body=csv, headers={"Idempotency-Key": key},
         )
 
 

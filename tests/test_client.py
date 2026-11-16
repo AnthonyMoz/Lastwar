@@ -46,6 +46,13 @@ class FakeApi(BaseHTTPRequestHandler):
             return self._send(403, {"error": {"code": "TENANT_MISMATCH", "message": "alliance key"}})
         if url.path == "/api/v1/alliance/members" and "format=csv" in url.query:
             return self._send(200, "memberId,name\nm1,Alpha\n", ctype="text/csv")
+        if url.path == "/api/v1/alliance/train/history" and self.command == "GET":
+            before = parse_qs(url.query).get("before", [None])[0]
+            if before is None:
+                return self._send(200, {"data": [{"date": "2026-11-02"}],
+                                        "meta": {"count": 1, "nextCursor": "2026-11-02"}})
+            return self._send(200, {"data": [{"date": "2026-11-01"}],
+                                    "meta": {"count": 1, "nextCursor": None}})
         if url.path == "/api/v1/server/players":
             page = int(parse_qs(url.query)["page"][0])
             return self._send(200, {"data": [{"id": f"p{page}"}],
@@ -134,6 +141,19 @@ class ClientTests(unittest.TestCase):
         self.assertEqual(call["query"]["preview"], ["true"])
         self.assertTrue(call["headers"]["Idempotency-Key"].startswith("lwf-"))
         self.assertEqual(json.loads(call["body"])["entries"][0]["expectedVersion"], None)
+
+    def test_train_history_csv_import(self):
+        self.client.import_train_history(csv="date,version\n2026-11-01,\n", idempotency_key="my-key-0001")
+        call = FakeApi.calls[0]
+        self.assertEqual(call["headers"]["Content-Type"], "text/csv")
+        self.assertEqual(call["headers"]["Idempotency-Key"], "my-key-0001")
+        with self.assertRaises(ValueError):
+            self.client.import_train_history()
+
+    def test_iter_train_history_follows_cursor(self):
+        dates = [r["date"] for r in self.client.iter_train_history()]
+        self.assertEqual(dates, ["2026-11-02", "2026-11-01"])
+        self.assertEqual(FakeApi.calls[1]["query"]["before"], ["2026-11-02"])
 
     def test_iter_server_players_paginates(self):
         ids = [p["id"] for p in self.client.iter_server_players(page_size=1)]

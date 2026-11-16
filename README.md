@@ -5,7 +5,8 @@ No third-party dependencies; Python 3.9+.
 
 Our alliance: **Reborn in Strength** (slug `kingbob`), public page
 <https://kingbob.lastwar.farm>. That subdomain is only the public page; the API
-is always called at `https://lastwar.farm/api/v1/...`.
+is always called at `https://www.lastwar.farm/api/v1/...` (the host used in the
+[official docs](https://www.lastwar.farm/docs/api)).
 
 ## Setup
 
@@ -64,12 +65,19 @@ Every endpoint in the spec has a method; see `lastwar_farm/client.py`.
 - **Big numbers come back as strings** (power, kills, THP, VS score, donations).
   Use `int(value)`.
 - **Day and week buckets** reset at 02:00 UTC, matching the in-game reset.
+- **`AUTO_SYNC_REQUIRED` / `TRIAL_EXPIRED`** mean the alliance's Auto Sync or Pro
+  access has lapsed, not that the key is wrong.
+- **Train history** exports page newest-first, 100 dates at a time
+  (`iter_train_history()` follows the cursor for you). Imports replace each
+  date's whole roster and need the date's current exported `version`. Always
+  run with `preview=True` first, and retry a failed commit with the same
+  `idempotency_key`.
 - **Imports** match members by `memberId` (exact, preferred) or `name` (fuzzy).
   The result includes `activityLogId`, which lets you undo the import in the web
   UI within 24h.
 - The OpenAPI spec is saved in `openapi/openapi.json` (v1.5.0). To refresh it:
-  `curl -o openapi/openapi.json https://lastwar.farm/api/v1/openapi.json`.
-  Interactive docs: <https://lastwar.farm/docs/api>.
+  `curl -o openapi/openapi.json https://www.lastwar.farm/api/v1/openapi.json`.
+  Docs: <https://www.lastwar.farm/docs/api>.
 
 ## Tests
 
