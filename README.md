@@ -86,3 +86,14 @@ python -m unittest discover -s tests
 ```
 
 The tests run against a local fake server and never call the real API.
+
+## Weekly report
+
+```sh
+python reports/weekly_summary.py                 # last full week
+python reports/weekly_summary.py --week-start 2026-11-09
+```
+
+Writes `settings.json`, `members.json`, `vs_daily.json` and `storms.json` to
+`reports/out/` (git-ignored). These feed the "Reborn in Strength Weekly Report"
+page on claude.ai.
