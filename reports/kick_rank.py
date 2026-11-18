@@ -121,6 +121,7 @@ def main() -> int:
     ap.add_argument("--rank-metric", default="rank", help="Metric name for the rank")
     ap.add_argument("--score-metric", default="score", help="Metric name for the score")
     ap.add_argument("--run-id", help="Existing run to load into (needed for Runs events)")
+    ap.add_argument("--recorded-at", help="Timestamp for the entries (default: now, UTC)")
     ap.add_argument("--commit", action="store_true", help="Actually upload (default: preview)")
     ap.add_argument("--excuse", action="append", default=[], help="Name or member id to skip")
     ap.add_argument("--top", type=int, default=10, help="How many to print")
@@ -157,9 +158,11 @@ def main() -> int:
         print(f"'{event['name']}' is a Runs event: create a run for today in lastwar.farm, "
               "then pass its id with --run-id.", file=sys.stderr)
         return 1
-    recorded_at = dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
+    recorded_at = args.recorded_at or dt.datetime.now(dt.timezone.utc).isoformat(
+        timespec="seconds").replace("+00:00", "Z")
     for metric_name, field in uploads:
-        entries = [{"memberId": r["memberId"], "value": r[field]} for r in ranked]
+        # lastwar.farm only accepts whole, non-negative numbers.
+        entries = [{"memberId": r["memberId"], "value": int(round(r[field]))} for r in ranked]
         if not args.commit:
             print(f"Preview: would upload {len(entries)} '{metric_name}' values to "
                   f"'{event['name']}' at {recorded_at}. Add --commit to upload.")
