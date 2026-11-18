@@ -3,7 +3,7 @@
 Usage:
   python reports/kick_rank.py                        # show the ranking only
   python reports/kick_rank.py --event-id <id>        # also preview the upload
-  python reports/kick_rank.py --event-id <id> --commit
+  python reports/kick_rank.py --event-id <id> --run-id <run> --commit
   python reports/kick_rank.py --excuse "Some Name" --excuse <memberId>
 
 Kick score is 0-100, higher means more at risk, over the last 4 full weeks:
@@ -120,6 +120,7 @@ def main() -> int:
     ap.add_argument("--event-id", help="Custom event to load the rank into")
     ap.add_argument("--rank-metric", default="rank", help="Metric name for the rank")
     ap.add_argument("--score-metric", default="score", help="Metric name for the score")
+    ap.add_argument("--run-id", help="Existing run to load into (needed for Runs events)")
     ap.add_argument("--commit", action="store_true", help="Actually upload (default: preview)")
     ap.add_argument("--excuse", action="append", default=[], help="Name or member id to skip")
     ap.add_argument("--top", type=int, default=10, help="How many to print")
@@ -152,6 +153,10 @@ def main() -> int:
         print(f"Event '{event['name']}' has no metric named {missing}. "
               f"It has: {[m['name'] for m in event['metrics']]}", file=sys.stderr)
         return 1
+    if event["eventType"] == "RUNS" and not args.run_id:
+        print(f"'{event['name']}' is a Runs event: create a run for today in lastwar.farm, "
+              "then pass its id with --run-id.", file=sys.stderr)
+        return 1
     recorded_at = dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
     for metric_name, field in uploads:
         entries = [{"memberId": r["memberId"], "value": r[field]} for r in ranked]
@@ -161,7 +166,7 @@ def main() -> int:
             continue
         result = client.import_custom_event_entries(
             event["id"], entries, recorded_at=recorded_at,
-            metric_id=metrics[metric_name.lower()])
+            metric_id=metrics[metric_name.lower()], run_id=args.run_id)
         data = result.get("data", result) if isinstance(result, dict) else result
         print(f"Uploaded '{metric_name}': {data}")
     return 0

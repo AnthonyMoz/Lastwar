@@ -313,10 +313,15 @@ class LastWarFarmClient:
     def import_custom_event_entries(
         self, event_id: str, entries: Entries = (), recorded_at: Optional[str] = None,
         metric_id: Optional[str] = None, phase: Optional[str] = None,
-        csv: Optional[str] = None,
+        csv: Optional[str] = None, run_id: Optional[str] = None,
     ) -> Any:
-        """entries: [{"memberId"|"name": ..., "value": number}]"""
-        meta = {"recordedAt": recorded_at, "metricId": metric_id, "phase": phase}
+        """entries: [{"memberId"|"name": ..., "value": number}]
+
+        Runs-type events need ``run_id`` of a run that already exists (create
+        the run in the lastwar.farm web UI; the API cannot). Not in the spec.
+        """
+        meta = {"recordedAt": recorded_at, "metricId": metric_id, "phase": phase,
+                "runId": run_id}
         body = _drop_none({**meta, "entries": list(entries)})
         return self._import(f"/api/v1/alliance/custom-events/{_q(event_id)}/entries",
                             body, csv, params=meta if csv is not None else None)
