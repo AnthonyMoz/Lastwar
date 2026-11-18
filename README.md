@@ -97,3 +97,18 @@ python reports/weekly_summary.py --week-start 2026-11-09
 Writes `settings.json`, `members.json`, `vs_daily.json` and `storms.json` to
 `reports/out/` (git-ignored). These feed the "Reborn in Strength Weekly Report"
 page on claude.ai.
+
+## Kick rank
+
+```sh
+python reports/kick_rank.py                                  # show the ranking
+python reports/kick_rank.py --event-id <id>                  # preview the upload
+python reports/kick_rank.py --event-id <id> --commit         # load into lastwar.farm
+python reports/kick_rank.py --excuse "Name" --excuse <memberId>
+```
+
+Scores the last 4 full weeks: 55% VS days under the minimum, 35% donation
+shortfall against the weekly target, 10% falling power. Rank 1 is most at risk.
+Members who joined in the last 14 days, or who have no VS record on more than a
+quarter of days (usually away or rejoined), are not ranked. The custom event
+needs two metrics named `rank` and `score`.
