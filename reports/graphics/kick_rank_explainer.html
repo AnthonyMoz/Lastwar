@@ -73,6 +73,10 @@
   .rank .big { font-family: var(--head); font-weight: 700; font-size: 64px; color: var(--bad); line-height: 1; }
   .rank p { margin: 0; color: var(--muted); }
   .rank p b { color: var(--fg); font-weight: 600; }
+  .check { display: flex; flex-direction: column; gap: 8px; padding: 22px 26px; border-radius: 10px; background: var(--vs); color: #11151b; }
+  .check .t { font-family: var(--head); font-weight: 700; font-size: 32px; text-transform: uppercase; letter-spacing: 0.03em; line-height: 1.1; }
+  .check .url { font-family: var(--body); font-weight: 600; font-size: 30px; letter-spacing: -0.01em; word-break: break-all; }
+  .check .s { font-size: 19px; opacity: 0.85; }
   .foot { color: var(--muted); font-size: 17px; display: flex; justify-content: space-between; border-top: 1px solid var(--line); padding-top: 16px; }
 </style>
 </head>
@@ -123,6 +127,12 @@
     <p><b>Rank</b> sorts everyone by score. <b>Rank 1 is the highest score</b>, the member most at risk. Officers review the top of the list. Nobody is kicked on the number alone.</p>
   </section>
 
+  <section class="check" aria-label="Check your rank">
+    <div class="t">Commanders: check your rank here</div>
+    <div class="url">kingbob.lastwar.farm/events/kick-rank</div>
+    <div class="s">Shows your latest rank and score, and how they change over time.</div>
+  </section>
+
   <section class="two">
     <div class="box">
       <h3>Not ranked</h3>
@@ -144,7 +154,7 @@
     </div>
   </section>
 
-  <div class="foot"><span>Data from lastwar.farm</span><span>Updated when officers run a check</span></div>
+  <div class="foot"><span>Data from lastwar.farm</span><span>Updated when officers run a check · kingbob.lastwar.farm/events/kick-rank</span></div>
 </div>
 </body>
 </html>
