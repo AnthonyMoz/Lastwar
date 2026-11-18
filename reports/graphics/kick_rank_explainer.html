@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Kick Rank Explained</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --bg: #11151b;
+    --panel: #1a2029;
+    --line: #2a3340;
+    --fg: #e9edf2;
+    --muted: #9aa6b4;
+    --vs: #e3a63b;
+    --don: #4bb3a8;
+    --pow: #a77be0;
+    --bad: #e2675c;
+    --head: "Barlow Condensed", "Arial Narrow", sans-serif;
+    --body: "Inter", "Segoe UI", Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); }
+  body { width: 1080px; color: var(--fg); font-family: var(--body); font-size: 22px; line-height: 1.4; }
+  .page { padding: 56px 60px 48px; display: flex; flex-direction: column; gap: 34px; }
+  .eyebrow { font-family: var(--head); font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--vs); font-size: 24px; }
+  h1 { font-family: var(--head); font-weight: 700; font-size: 84px; line-height: 0.95; margin: 6px 0 14px; letter-spacing: 0.01em; text-transform: uppercase; }
+  .lede { color: var(--muted); font-size: 24px; max-width: 900px; margin: 0; }
+  .lede b { color: var(--fg); font-weight: 600; }
+
+  .scale { display: flex; flex-direction: column; gap: 10px; }
+  .bar { display: flex; height: 64px; border-radius: 8px; overflow: hidden; }
+  .seg { display: flex; align-items: center; padding: 0 18px; font-family: var(--head); font-weight: 700; font-size: 30px; color: #11151b; letter-spacing: 0.02em; }
+  .seg.vs { background: var(--vs); flex: 55; }
+  .seg.don { background: var(--don); flex: 35; }
+  .seg.pow { background: var(--pow); flex: 10; justify-content: center; padding: 0; }
+  .ticks { position: relative; height: 22px; color: var(--muted); font-size: 18px; font-variant-numeric: tabular-nums; }
+  .ticks span { position: absolute; top: 0; transform: translateX(-50%); }
+  .ticks span:first-child { transform: none; }
+  .ticks span:last-child { transform: translateX(-100%); }
+
+  .parts { display: grid; grid-template-columns: 1fr; gap: 14px; }
+  .part { display: grid; grid-template-columns: 112px 1fr; gap: 22px; align-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 20px 24px; }
+  .pts { font-family: var(--head); font-weight: 700; font-size: 56px; line-height: 1; text-align: center; }
+  .pts small { display: block; font-size: 18px; letter-spacing: 0.12em; color: var(--muted); font-weight: 600; margin-top: 4px; }
+  .part h2 { font-family: var(--head); font-weight: 700; font-size: 32px; margin: 0 0 4px; text-transform: uppercase; letter-spacing: 0.02em; }
+  .part p { margin: 0; color: var(--muted); }
+  .part p b { color: var(--fg); font-weight: 600; }
+  .vs .pts, .vs h2 { color: var(--vs); }
+  .don .pts, .don h2 { color: var(--don); }
+  .pow .pts, .pow h2 { color: var(--pow); }
+
+  .example { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 24px 28px; display: flex; flex-direction: column; gap: 14px; }
+  .example h3 { font-family: var(--head); font-size: 28px; margin: 0; text-transform: uppercase; letter-spacing: 0.04em; }
+  .example h3 span { color: var(--muted); font-weight: 600; }
+  .calc { display: grid; grid-template-columns: 1fr auto; row-gap: 10px; column-gap: 24px; font-variant-numeric: tabular-nums; }
+  .calc div:nth-child(even) { text-align: right; font-weight: 600; }
+  .calc .k { color: var(--muted); }
+  .calc .k b { color: var(--fg); font-weight: 500; }
+  .calc .total { border-top: 1px solid var(--line); padding-top: 12px; font-family: var(--head); font-size: 34px; font-weight: 700; color: var(--fg); }
+  .calc .total.r { color: var(--bad); }
+  .c-vs { color: var(--vs); } .c-don { color: var(--don); } .c-pow { color: var(--pow); }
+
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .box { border: 1px solid var(--line); border-radius: 10px; padding: 22px 24px; display: flex; flex-direction: column; gap: 10px; }
+  .box h3 { font-family: var(--head); font-size: 28px; margin: 0; text-transform: uppercase; letter-spacing: 0.04em; }
+  .box ul { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 8px; color: var(--muted); font-size: 20px; }
+  .box ul b { color: var(--fg); font-weight: 600; }
+  .box.safe { border-color: var(--don); }
+  .box.safe h3 { color: var(--don); }
+
+  .rank { display: flex; align-items: center; gap: 22px; padding: 20px 24px; border-radius: 10px; background: var(--panel); border: 1px solid var(--line); }
+  .rank .big { font-family: var(--head); font-weight: 700; font-size: 64px; color: var(--bad); line-height: 1; }
+  .rank p { margin: 0; color: var(--muted); }
+  .rank p b { color: var(--fg); font-weight: 600; }
+  .foot { color: var(--muted); font-size: 17px; display: flex; justify-content: space-between; border-top: 1px solid var(--line); padding-top: 16px; }
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <div class="eyebrow">Reborn in Strength · Kick Rank</div>
+    <h1>How the kick score works</h1>
+    <p class="lede">Every member gets a score from <b>0 to 100</b> based on the <b>last 4 full weeks</b>. Higher means more at risk of being kicked. 0 is perfect.</p>
+  </header>
+
+  <section class="scale" aria-label="Score weights">
+    <div class="bar">
+      <div class="seg vs">VS · 55</div>
+      <div class="seg don">DONATIONS · 35</div>
+      <div class="seg pow">10</div>
+    </div>
+    <div class="ticks"><span style="left:0">0</span><span style="left:55%">55</span><span style="left:90%">90</span><span style="left:100%">100</span></div>
+  </section>
+
+  <section class="parts">
+    <div class="part vs">
+      <div class="pts">55<small>MAX PTS</small></div>
+      <div><h2>VS days under the minimum</h2><p>The share of VS days you scored under <b>7.2M</b>. Under on every day = 55 points. Under on half the days = 27.5.</p></div>
+    </div>
+    <div class="part don">
+      <div class="pts">35<small>MAX PTS</small></div>
+      <div><h2>Donation shortfall</h2><p>How far your weekly average falls short of <b>35,000</b> (5,000 a day). Donate nothing = 35 points. Hit the target = 0.</p></div>
+    </div>
+    <div class="part pow">
+      <div class="pts">10<small>PTS</small></div>
+      <div><h2>Power going down</h2><p>If your power is <b>lower</b> at the end of the 4 weeks than at the start, you get 10 points. Growing or flat = 0.</p></div>
+    </div>
+  </section>
+
+  <section class="example">
+    <h3>Worked example <span>· made-up player</span></h3>
+    <div class="calc">
+      <div class="k"><b>12 of 24</b> VS days under 7.2M &nbsp;→&nbsp; 55 × 12 ÷ 24</div><div class="c-vs">27.5</div>
+      <div class="k">Donated <b>21,000</b> a week &nbsp;→&nbsp; 35 × (1 − 21,000 ÷ 35,000)</div><div class="c-don">14.0</div>
+      <div class="k">Power <b>fell</b> over the 4 weeks</div><div class="c-pow">10.0</div>
+      <div class="total">Kick score <span style="font-family: var(--body); font-size: 18px; font-weight: 400; color: var(--muted)">· shows as 52 in lastwar.farm (whole numbers)</span></div><div class="total r">51.5</div>
+    </div>
+  </section>
+
+  <section class="rank">
+    <div class="big">#1</div>
+    <p><b>Rank</b> sorts everyone by score. <b>Rank 1 is the highest score</b>, the member most at risk. Officers review the top of the list. Nobody is kicked on the number alone.</p>
+  </section>
+
+  <section class="two">
+    <div class="box">
+      <h3>Not ranked</h3>
+      <ul>
+        <li><b>New members</b>: joined in the last 14 days</li>
+        <li><b>Away or rejoined</b>: no VS record on over a quarter of days. Officers check in game.</li>
+        <li><b>Excused</b> by officers, e.g. holidays</li>
+        <li><b>Storms don't count</b>. Officers pick the teams.</li>
+      </ul>
+    </div>
+    <div class="box safe">
+      <h3>Stay off the list</h3>
+      <ul>
+        <li>Score <b>7.2M+ VS</b> every VS day</li>
+        <li>Donate <b>5,000 a day</b> (35,000 a week)</li>
+        <li><b>Keep your power growing</b></li>
+        <li>Away for a while? <b>Tell an R4</b></li>
+      </ul>
+    </div>
+  </section>
+
+  <div class="foot"><span>Data from lastwar.farm</span><span>Updated when officers run a check</span></div>
+</div>
+</body>
+</html>
