@@ -59,10 +59,13 @@ def build(client: LastWarFarmClient, now: dt.datetime):
     don_rows = sorted(
         [(m["name"], don.get(i, 0)) for i, m in members.items() if don.get(i, 0) < don_target],
         key=lambda r: r[1])
+    # Duels carry no timestamp; the latest power snapshot marks the last phone sync.
+    synced = max(dt.datetime.fromisoformat(p["recordedAt"].replace("Z", "+00:00"))
+                 for p in client.export_power()["data"])
     reset = dt.datetime.combine(day + dt.timedelta(days=1), dt.time(2), dt.timezone.utc)
     return dict(day=day, vs_min=vs_min, don_target=don_target, days_in=days_in,
                 vs_rows=vs_rows, don_rows=don_rows, members=len(members),
-                now=now, left=reset - now, has_vs=bool(vs))
+                now=now, synced=synced, left=reset - now, has_vs=bool(vs))
 
 
 def render(d) -> str:
@@ -133,7 +136,7 @@ ul {{ list-style:none; margin:0; padding:0; }}
   <div class="hdr"><span>Commander</span><span>Progress</span><span>Today</span><span>Needs</span></div>
   <ul>{vs_html}</ul>
 </section>
-<div class="foot">From lastwar.farm, as of {(d['now'] - SERVER_OFFSET).strftime('%H:%M')} server time. Already pushed since then? You're clear.</div>
+<div class="foot">Last game sync {(d['synced'] - SERVER_OFFSET).strftime('%H:%M')} server time. Pushed since then? You're clear.</div>
 </div></body></html>"""
 
 
