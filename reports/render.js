@@ -9,7 +9,7 @@ const path = require('path');
     process.exit(1);
   }
   const browser = await chromium.launch();
-  const page = await browser.newPage({ viewport: { width: 1080, height: 1000 }, deviceScaleFactor: 2 });
+  const page = await browser.newPage({ viewport: { width: 1080, height: 600 }, deviceScaleFactor: 2 });
   await page.goto('file://' + path.resolve(input), { waitUntil: 'networkidle' });
   await page.evaluate(() => document.fonts.ready);
   await page.screenshot({ path: output, fullPage: true });
