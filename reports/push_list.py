@@ -97,21 +97,24 @@ body {{ width:1080px; color:var(--fg); font-family:var(--body); font-size:22px; 
 h1 {{ font-family:var(--head); font-weight:700; font-size:92px; line-height:.92; margin:6px 0 14px; text-transform:uppercase; }}
 h1 span {{ color:var(--vs); }}
 .lede {{ margin:0; color:var(--muted); font-size:24px; max-width:920px; }} .lede b {{ color:var(--fg); font-weight:600; }}
-.row {{ display:flex; flex-wrap:wrap; gap:14px; margin-top:16px; }}
-.clock {{ background:var(--vs); color:#11151b; font-family:var(--head); font-weight:700; font-size:30px; padding:6px 16px; border-radius:6px; letter-spacing:.03em; text-transform:uppercase; }}
+header {{ display:grid; grid-template-columns:minmax(0,1fr) auto; gap:24px; align-items:start; }}
+.clock {{ background:var(--vs); color:#11151b; border-radius:10px; padding:16px 22px; text-align:right; display:flex; flex-direction:column; gap:4px; min-width:250px; }}
+.clock .big {{ font-family:var(--head); font-weight:700; font-size:54px; line-height:.95; }}
+.clock .lbl {{ font-family:var(--head); font-weight:700; font-size:22px; letter-spacing:.06em; text-transform:uppercase; }}
+.clock .sync {{ font-size:16px; font-weight:600; opacity:.8; border-top:1px solid rgba(17,21,27,.25); padding-top:6px; margin-top:4px; }}
 .vs {{ background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:24px 26px 14px; display:flex; flex-direction:column; gap:10px; }}
 .vs h2 {{ font-family:var(--head); font-size:42px; margin:0; text-transform:uppercase; color:var(--vs); line-height:1; }}
 .vs .sub {{ color:var(--muted); font-size:18px; }}
-.hdr, .vs li {{ display:grid; grid-template-columns:360px minmax(0,1fr) 96px 96px; gap:16px; align-items:center; }}
+.hdr, .vs li {{ display:grid; grid-template-columns:360px minmax(0,1fr) 120px 120px; gap:16px; align-items:center; }}
 .hdr {{ font-size:15px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); border-bottom:1px solid var(--line); padding-bottom:6px; margin-top:6px; }}
 .hdr span:nth-child(n+3), .v, .need {{ text-align:right; }}
 ul {{ list-style:none; margin:0; padding:0; }}
-.vs li {{ padding:12px 0; border-bottom:1px solid var(--line); font-variant-numeric:tabular-nums; }}
+.vs li {{ padding:14px 0; border-bottom:1px solid var(--line); font-variant-numeric:tabular-nums; }}
 .vs li:last-child {{ border-bottom:0; }}
 .nm {{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:700; font-size:30px; line-height:1.15; }}
-.track {{ height:12px; background:var(--track); border-radius:6px; overflow:hidden; position:relative; }}
+.track {{ height:16px; background:var(--track); border-radius:6px; overflow:hidden; position:relative; }}
 .fill {{ display:block; height:100%; background:var(--vs); border-radius:6px; }}
-.v {{ color:var(--muted); }} .need {{ color:var(--bad); font-weight:600; }}
+.v {{ color:var(--muted); font-size:28px; font-weight:500; }} .need {{ color:var(--bad); font-weight:700; font-size:30px; }}
 .vs li.none {{ display:block; color:var(--muted); }}
 .msg {{ border-left:6px solid var(--bad); background:var(--panel); border-radius:0 10px 10px 0; padding:20px 24px; display:flex; flex-direction:column; gap:6px; }}
 .msg .t {{ font-family:var(--head); font-weight:700; font-size:34px; text-transform:uppercase; letter-spacing:.02em; line-height:1.05; }}
@@ -122,13 +125,14 @@ ul {{ list-style:none; margin:0; padding:0; }}
 .chips {{ display:flex; flex-wrap:wrap; gap:8px; }}
 .chip {{ font-size:17px; border:1px solid var(--line); border-radius:999px; padding:4px 12px; color:var(--fg); }}
 .chip b {{ color:var(--don); font-weight:600; }}
-.foot {{ color:var(--muted); font-size:17px; border-top:1px solid var(--line); padding-top:14px; }}
 </style></head><body><div class="page">
 <header>
+  <div class="lead">
   <div class="eyebrow">Reborn in Strength · {d['day'].strftime('%A %-d %b')} · VS day</div>
   <h1>Push <span>now</span></h1>
   <p class="lede"><b>{len(d['vs_rows'])} commanders</b> are still under today's <b>{short(vs_min)}</b> VS minimum. We need to push. Get it done before reset.</p>
-  <div class="row"><span class="clock">{hrs}h {mins:02d}m to reset · 00:00 server time</span></div>
+</div>
+  <div class="clock"><span class="big">{hrs}h {mins:02d}m</span><span class="lbl">to reset · 00:00</span><span class="sync">Data from {(d['synced'] - SERVER_OFFSET).strftime('%H:%M')} server time</span></div>
 </header>
 <section class="vs">
   <h2>Under {short(vs_min)} today</h2>
@@ -136,7 +140,6 @@ ul {{ list-style:none; margin:0; padding:0; }}
   <div class="hdr"><span>Commander</span><span>Progress</span><span>Today</span><span>Needs</span></div>
   <ul>{vs_html}</ul>
 </section>
-<div class="foot">Last game sync {(d['synced'] - SERVER_OFFSET).strftime('%H:%M')} server time. Pushed since then? You're clear.</div>
 </div></body></html>"""
 
 
