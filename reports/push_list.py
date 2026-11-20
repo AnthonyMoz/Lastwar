@@ -95,13 +95,13 @@ h1 span {{ color:var(--vs); }}
 .vs {{ background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:24px 26px 14px; display:flex; flex-direction:column; gap:10px; }}
 .vs h2 {{ font-family:var(--head); font-size:42px; margin:0; text-transform:uppercase; color:var(--vs); line-height:1; }}
 .vs .sub {{ color:var(--muted); font-size:18px; }}
-.hdr, .vs li {{ display:grid; grid-template-columns:250px minmax(0,1fr) 92px 92px; gap:16px; align-items:center; }}
+.hdr, .vs li {{ display:grid; grid-template-columns:360px minmax(0,1fr) 96px 96px; gap:16px; align-items:center; }}
 .hdr {{ font-size:15px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); border-bottom:1px solid var(--line); padding-bottom:6px; margin-top:6px; }}
 .hdr span:nth-child(n+3), .v, .need {{ text-align:right; }}
 ul {{ list-style:none; margin:0; padding:0; }}
-.vs li {{ padding:8px 0; border-bottom:1px solid var(--line); font-variant-numeric:tabular-nums; }}
+.vs li {{ padding:12px 0; border-bottom:1px solid var(--line); font-variant-numeric:tabular-nums; }}
 .vs li:last-child {{ border-bottom:0; }}
-.nm {{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600; }}
+.nm {{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:700; font-size:30px; line-height:1.15; }}
 .track {{ height:12px; background:var(--track); border-radius:6px; overflow:hidden; position:relative; }}
 .fill {{ display:block; height:100%; background:var(--vs); border-radius:6px; }}
 .v {{ color:var(--muted); }} .need {{ color:var(--bad); font-weight:600; }}
