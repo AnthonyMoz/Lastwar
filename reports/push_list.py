@@ -62,68 +62,87 @@ def build(client: LastWarFarmClient, now: dt.datetime):
 
 
 def render(d) -> str:
-    both = {n for n, _ in d["vs_rows"]} & {n for n, _ in d["don_rows"]}
+    """VS is the headline: full-width rows with a progress bar. Donations sit below, compact."""
     e = html.escape
     hrs, mins = divmod(int(d["left"].total_seconds()) // 60, 60)
+    vs_min, don_target = d["vs_min"], d["don_target"]
 
-    def rows(items, target, places=1):
-        out = []
-        for name, val in items:
-            mark = '<i class="both" title="Under both targets"></i>' if name in both else ""
-            out.append(f'<li><span class="nm">{mark}{e(name)}</span>'
-                       f'<span class="v">{short(val, places)}</span>'
-                       f'<span class="need">+{short(target - val)}</span></li>')
-        return "\n".join(out) or '<li class="none">Everyone has hit it. Nice work.</li>'
+    vs_items = []
+    for name, val in d["vs_rows"]:
+        pct = max(1.5, min(100.0, 100 * val / vs_min))
+        vs_items.append(
+            f'<li><span class="nm">{e(name)}</span>'
+            f'<span class="track"><span class="fill" style="width:{pct:.1f}%"></span></span>'
+            f'<span class="v">{short(val, 2)}</span>'
+            f'<span class="need">+{short(vs_min - val)}</span></li>')
+    vs_html = "\n".join(vs_items) or '<li class="none">Everyone has hit the VS minimum today.</li>'
+
+    don_html = "\n".join(
+        f'<span class="chip">{e(name)} <b>+{short(don_target - val)}</b></span>'
+        for name, val in d["don_rows"]) or '<span class="chip">Everyone is on track.</span>'
 
     return f"""<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Push Now</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;500;600&display=swap">
 <style>
 :root {{ --bg:#11151b; --panel:#1a2029; --line:#2a3340; --fg:#e9edf2; --muted:#9aa6b4;
-  --vs:#e3a63b; --don:#4bb3a8; --bad:#e2675c;
+  --vs:#e3a63b; --don:#4bb3a8; --bad:#e2675c; --track:#2a3340;
   --head:"Barlow Condensed","Arial Narrow",sans-serif; --body:"Inter","Segoe UI",Arial,sans-serif; }}
 * {{ box-sizing:border-box; }} html,body {{ margin:0; background:var(--bg); }}
 body {{ width:1080px; color:var(--fg); font-family:var(--body); font-size:22px; line-height:1.35; }}
 .page {{ padding:52px 56px 44px; display:flex; flex-direction:column; gap:28px; }}
-.eyebrow {{ font-family:var(--head); font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--bad); font-size:24px; }}
-h1 {{ font-family:var(--head); font-weight:700; font-size:96px; line-height:.92; margin:6px 0 12px; text-transform:uppercase; }}
-.lede {{ margin:0; color:var(--muted); font-size:24px; }} .lede b {{ color:var(--fg); font-weight:600; }}
-.clock {{ display:inline-block; margin-top:14px; background:var(--bad); color:#11151b; font-family:var(--head); font-weight:700;
-  font-size:30px; padding:6px 16px; border-radius:6px; letter-spacing:.03em; text-transform:uppercase; }}
-.cols {{ display:grid; grid-template-columns:1fr 1fr; gap:20px; align-items:start; }}
-.col {{ background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:22px 22px 16px; display:flex; flex-direction:column; gap:12px; min-width:0; }}
-.col h2 {{ font-family:var(--head); font-size:36px; margin:0; text-transform:uppercase; letter-spacing:.02em; line-height:1; }}
-.col.vs h2 {{ color:var(--vs); }} .col.don h2 {{ color:var(--don); }}
-.col .sub {{ color:var(--muted); font-size:18px; margin-top:-4px; }}
-.hdr, li {{ display:grid; grid-template-columns:minmax(0,1fr) 84px 90px; gap:10px; align-items:center; }}
-.hdr {{ font-size:15px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); border-bottom:1px solid var(--line); padding-bottom:6px; }}
-.hdr span:not(:first-child), .v, .need {{ text-align:right; }}
-ul {{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; }}
-li {{ padding:7px 0; border-bottom:1px solid var(--line); font-size:21px; font-variant-numeric:tabular-nums; }}
-li:last-child {{ border-bottom:0; }}
-.nm {{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:500; display:flex; align-items:center; gap:8px; }}
+.eyebrow {{ font-family:var(--head); font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--vs); font-size:24px; }}
+h1 {{ font-family:var(--head); font-weight:700; font-size:92px; line-height:.92; margin:6px 0 14px; text-transform:uppercase; }}
+h1 span {{ color:var(--vs); }}
+.lede {{ margin:0; color:var(--muted); font-size:24px; max-width:920px; }} .lede b {{ color:var(--fg); font-weight:600; }}
+.row {{ display:flex; flex-wrap:wrap; gap:14px; margin-top:16px; }}
+.clock {{ background:var(--vs); color:#11151b; font-family:var(--head); font-weight:700; font-size:30px; padding:6px 16px; border-radius:6px; letter-spacing:.03em; text-transform:uppercase; }}
+.vs {{ background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:24px 26px 14px; display:flex; flex-direction:column; gap:10px; }}
+.vs h2 {{ font-family:var(--head); font-size:42px; margin:0; text-transform:uppercase; color:var(--vs); line-height:1; }}
+.vs .sub {{ color:var(--muted); font-size:18px; }}
+.hdr, .vs li {{ display:grid; grid-template-columns:250px minmax(0,1fr) 92px 92px; gap:16px; align-items:center; }}
+.hdr {{ font-size:15px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); border-bottom:1px solid var(--line); padding-bottom:6px; margin-top:6px; }}
+.hdr span:nth-child(n+3), .v, .need {{ text-align:right; }}
+ul {{ list-style:none; margin:0; padding:0; }}
+.vs li {{ padding:8px 0; border-bottom:1px solid var(--line); font-variant-numeric:tabular-nums; }}
+.vs li:last-child {{ border-bottom:0; }}
+.nm {{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600; }}
+.track {{ height:12px; background:var(--track); border-radius:6px; overflow:hidden; position:relative; }}
+.fill {{ display:block; height:100%; background:var(--vs); border-radius:6px; }}
 .v {{ color:var(--muted); }} .need {{ color:var(--bad); font-weight:600; }}
-.both {{ flex:none; width:12px; height:12px; border-radius:50%; background:var(--bad); display:inline-block; }}
-li.none {{ display:block; color:var(--muted); }}
-.key {{ display:flex; flex-wrap:wrap; gap:22px; color:var(--muted); font-size:18px; align-items:center; }}
-.key span {{ display:inline-flex; gap:8px; align-items:center; }}
-.foot {{ color:var(--muted); font-size:17px; border-top:1px solid var(--line); padding-top:14px; display:flex; justify-content:space-between; gap:20px; }}
+.vs li.none {{ display:block; color:var(--muted); }}
+.msg {{ border-left:6px solid var(--bad); background:var(--panel); border-radius:0 10px 10px 0; padding:20px 24px; display:flex; flex-direction:column; gap:6px; }}
+.msg .t {{ font-family:var(--head); font-weight:700; font-size:34px; text-transform:uppercase; letter-spacing:.02em; line-height:1.05; }}
+.msg p {{ margin:0; color:var(--muted); }} .msg p b {{ color:var(--fg); }}
+.don {{ display:flex; flex-direction:column; gap:12px; }}
+.don h3 {{ font-family:var(--head); font-size:28px; margin:0; text-transform:uppercase; color:var(--don); letter-spacing:.03em; }}
+.don .sub {{ color:var(--muted); font-size:17px; margin-top:-6px; }}
+.chips {{ display:flex; flex-wrap:wrap; gap:8px; }}
+.chip {{ font-size:17px; border:1px solid var(--line); border-radius:999px; padding:4px 12px; color:var(--fg); }}
+.chip b {{ color:var(--don); font-weight:600; }}
+.foot {{ color:var(--muted); font-size:17px; border-top:1px solid var(--line); padding-top:14px; }}
 </style></head><body><div class="page">
 <header>
-  <div class="eyebrow">Reborn in Strength · {d['day'].strftime('%A %-d %b')}</div>
-  <h1>Push now</h1>
-  <p class="lede"><b>{len(d['vs_rows'])}</b> commanders are under today's VS minimum and <b>{len(d['don_rows'])}</b> are behind on donations. Get it done before reset.</p>
-  <div class="clock">{hrs}h {mins:02d}m to reset · 02:00 UTC</div>
+  <div class="eyebrow">Reborn in Strength · {d['day'].strftime('%A %-d %b')} · VS day</div>
+  <h1>All hands on <span>VS</span></h1>
+  <p class="lede"><b>{len(d['vs_rows'])} commanders</b> are still under today's <b>{short(vs_min)}</b> VS minimum. Every point counts toward the alliance score. Get it done before reset.</p>
+  <div class="row"><span class="clock">{hrs}h {mins:02d}m to reset · 02:00 UTC</span></div>
 </header>
-<div class="cols">
-  <section class="col vs"><h2>VS under {short(d['vs_min'])}</h2><div class="sub">Today's score so far</div>
-    <div class="hdr"><span>Commander</span><span>Today</span><span>Needs</span></div>
-    <ul>{rows(d['vs_rows'], d['vs_min'], 2)}</ul></section>
-  <section class="col don"><h2>Donations under {short(d['don_target'])}</h2><div class="sub">This week so far ({d['days_in']} days × 5K)</div>
-    <div class="hdr"><span>Commander</span><span>Week</span><span>Needs</span></div>
-    <ul>{rows(d['don_rows'], d['don_target'])}</ul></section>
-</div>
-<div class="key"><span><i class="both"></i>Under both targets</span><span>Needs = how much more to hit the target</span></div>
-<div class="foot"><span>From lastwar.farm, as of {d['now'].strftime('%H:%M UTC')}. Already pushed since then? You're clear.</span><span>Check your rank: kingbob.lastwar.farm/events/kick-rank</span></div>
+<section class="vs">
+  <h2>Under {short(vs_min)} today</h2>
+  <div class="sub">Bar shows progress to {short(vs_min)}. Needs = how much more to hit it.</div>
+  <div class="hdr"><span>Commander</span><span>Progress</span><span>Today</span><span>Needs</span></div>
+  <ul>{vs_html}</ul>
+</section>
+<section class="msg">
+  <div class="t">We need a stark improvement</div>
+  <p>Hitting the minimum every VS day is the baseline we've all signed up for. <b>If we don't see a big change, there will be consequences.</b> Can't make it today? Tell an R4 before reset.</p>
+</section>
+<section class="don">
+  <h3>Also behind on donations</h3>
+  <div class="sub">Under {short(don_target)} this week so far ({d['days_in']} days × 5K). Amount shown is what's still needed.</div>
+  <div class="chips">{don_html}</div>
+</section>
+<div class="foot">From lastwar.farm, as of {d['now'].strftime('%H:%M UTC')}. Already pushed since then? You're clear.</div>
 </div></body></html>"""
 
 
