@@ -21,9 +21,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from lastwar_farm import LastWarFarmClient  # noqa: E402
 
 
+# Server time is UTC-2; the daily reset is 00:00 server time.
+SERVER_OFFSET = dt.timedelta(hours=2)
+
+
 def game_day(now: dt.datetime) -> dt.date:
-    """In-game day: resets at 02:00 UTC."""
-    return (now - dt.timedelta(hours=2)).date()
+    """In-game day: resets at 00:00 server time (02:00 UTC)."""
+    return (now - SERVER_OFFSET).date()
 
 
 def short(n: int, places: int = 1) -> str:
@@ -121,7 +125,7 @@ ul {{ list-style:none; margin:0; padding:0; }}
   <div class="eyebrow">Reborn in Strength · {d['day'].strftime('%A %-d %b')} · VS day</div>
   <h1>Push <span>now</span></h1>
   <p class="lede"><b>{len(d['vs_rows'])} commanders</b> are still under today's <b>{short(vs_min)}</b> VS minimum. We need to push. Get it done before reset.</p>
-  <div class="row"><span class="clock">{hrs}h {mins:02d}m to reset · 02:00 UTC</span></div>
+  <div class="row"><span class="clock">{hrs}h {mins:02d}m to reset · 00:00 server time</span></div>
 </header>
 <section class="vs">
   <h2>Under {short(vs_min)} today</h2>
@@ -129,7 +133,7 @@ ul {{ list-style:none; margin:0; padding:0; }}
   <div class="hdr"><span>Commander</span><span>Progress</span><span>Today</span><span>Needs</span></div>
   <ul>{vs_html}</ul>
 </section>
-<div class="foot">From lastwar.farm, as of {d['now'].strftime('%H:%M UTC')}. Already pushed since then? You're clear.</div>
+<div class="foot">From lastwar.farm, as of {(d['now'] - SERVER_OFFSET).strftime('%H:%M')} server time. Already pushed since then? You're clear.</div>
 </div></body></html>"""
 
 
