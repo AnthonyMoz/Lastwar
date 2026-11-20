@@ -62,7 +62,7 @@ def build(client: LastWarFarmClient, now: dt.datetime):
 
 
 def render(d) -> str:
-    """VS is the headline: full-width rows with a progress bar. Donations sit below, compact."""
+    """Everyone under today's VS minimum, with a progress bar to the target."""
     e = html.escape
     hrs, mins = divmod(int(d["left"].total_seconds()) // 60, 60)
     vs_min, don_target = d["vs_min"], d["don_target"]
@@ -76,10 +76,6 @@ def render(d) -> str:
             f'<span class="v">{short(val, 2)}</span>'
             f'<span class="need">+{short(vs_min - val)}</span></li>')
     vs_html = "\n".join(vs_items) or '<li class="none">Everyone has hit the VS minimum today.</li>'
-
-    don_html = "\n".join(
-        f'<span class="chip">{e(name)} <b>+{short(don_target - val)}</b></span>'
-        for name, val in d["don_rows"]) or '<span class="chip">Everyone is on track.</span>'
 
     return f"""<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Push Now</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;500;600&display=swap">
@@ -123,8 +119,8 @@ ul {{ list-style:none; margin:0; padding:0; }}
 </style></head><body><div class="page">
 <header>
   <div class="eyebrow">Reborn in Strength · {d['day'].strftime('%A %-d %b')} · VS day</div>
-  <h1>All hands on <span>VS</span></h1>
-  <p class="lede"><b>{len(d['vs_rows'])} commanders</b> are still under today's <b>{short(vs_min)}</b> VS minimum. Every point counts toward the alliance score. Get it done before reset.</p>
+  <h1>Push <span>now</span></h1>
+  <p class="lede"><b>{len(d['vs_rows'])} commanders</b> are still under today's <b>{short(vs_min)}</b> VS minimum. We need to push. Get it done before reset.</p>
   <div class="row"><span class="clock">{hrs}h {mins:02d}m to reset · 02:00 UTC</span></div>
 </header>
 <section class="vs">
@@ -132,15 +128,6 @@ ul {{ list-style:none; margin:0; padding:0; }}
   <div class="sub">Bar shows progress to {short(vs_min)}. Needs = how much more to hit it.</div>
   <div class="hdr"><span>Commander</span><span>Progress</span><span>Today</span><span>Needs</span></div>
   <ul>{vs_html}</ul>
-</section>
-<section class="msg">
-  <div class="t">We need a stark improvement</div>
-  <p>Hitting the minimum every VS day is the baseline we've all signed up for. <b>If we don't see a big change, there will be consequences.</b> Can't make it today? Tell an R4 before reset.</p>
-</section>
-<section class="don">
-  <h3>Also behind on donations</h3>
-  <div class="sub">Under {short(don_target)} this week so far ({d['days_in']} days × 5K). Amount shown is what's still needed.</div>
-  <div class="chips">{don_html}</div>
 </section>
 <div class="foot">From lastwar.farm, as of {d['now'].strftime('%H:%M UTC')}. Already pushed since then? You're clear.</div>
 </div></body></html>"""
