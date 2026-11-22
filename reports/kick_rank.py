@@ -6,7 +6,8 @@ Usage:
   python reports/kick_rank.py --event-id <id> --run-id <run> --commit
   python reports/kick_rank.py --excuse "Some Name" --excuse <memberId>
 
-Kick score is 0-100, higher means more at risk, over the last 4 full weeks:
+Kick score is 0-100, higher means more at risk, over the last 3 full weeks plus
+the current week up to yesterday (donation target prorated by day):
   55%  share of VS days under the alliance's daily VS minimum
   35%  how far average weekly donations fall short of the weekly target
   10%  power fell over the period
@@ -40,10 +41,19 @@ RESET = "T02:00:00"
 
 
 def window(today: dt.date, week_start_day: int):
+    """The last WEEKS-1 full weeks plus the current week up to yesterday.
+
+    `today` is the current in-game day (it resets at 00:00 server time, 02:00
+    UTC). Returns (week starts, end day exclusive). On the first day of a week
+    the current week has no days yet, so the window is the last WEEKS full weeks.
+    """
     py_start = 0 if week_start_day == 1 else 6
     this_week = today - dt.timedelta(days=(today.weekday() - py_start) % 7)
-    weeks = [this_week - dt.timedelta(days=7 * i) for i in range(WEEKS, 0, -1)]
-    return weeks, this_week
+    if today == this_week:
+        weeks = [this_week - dt.timedelta(days=7 * i) for i in range(WEEKS, 0, -1)]
+    else:
+        weeks = [this_week - dt.timedelta(days=7 * i) for i in range(WEEKS - 1, -1, -1)]
+    return weeks, today
 
 
 def last_before(series, boundary):
@@ -59,7 +69,8 @@ def compute(client: LastWarFarmClient, today: dt.date, excuse: set[str]):
     alliance = client.get_alliance()["data"]
     s = alliance["settings"]
     vs_min = int(s["duelThreshold"])
-    don_target = int(s["donationDaily"]) * 7
+    don_day = int(s["donationDaily"])
+    don_target = don_day * 7
     weeks, end = window(today, s["weekStartDay"])
     start_iso, end_iso = weeks[0].isoformat(), end.isoformat()
     grace_from = (today - dt.timedelta(days=GRACE_DAYS)).isoformat()
@@ -95,12 +106,16 @@ def compute(client: LastWarFarmClient, today: dt.date, excuse: set[str]):
             continue
         under = sum(1 for x in scores if x is None or x < vs_min)
         weeks_in = [w for w in weeks if (w + dt.timedelta(days=7)).isoformat() > joined]
-        don_avg = sum(don.get((mid, w.isoformat()), 0) for w in weeks_in) / len(weeks_in)
+        # The current week only counts the days played so far.
+        targets = [don_day * min(7, (end - w).days) for w in weeks_in]
+        given = sum(don.get((mid, w.isoformat()), 0) for w in weeks_in)
+        don_share = given / sum(targets) if sum(targets) else 1.0
+        don_avg = don_share * don_target  # weekly equivalent, for display
         p0 = last_before(power[mid], start_iso + RESET)
         p1 = last_before(power[mid], end_iso + RESET)
         power_fell = p0 is not None and p1 is not None and p1 < p0
         score = 100 * (WEIGHTS["vs"] * under / len(days)
-                       + WEIGHTS["donations"] * max(0.0, 1 - don_avg / don_target)
+                       + WEIGHTS["donations"] * max(0.0, 1 - don_share)
                        + WEIGHTS["power"] * power_fell)
         ranked.append({
             "memberId": mid, "name": name, "role": m["role"],
@@ -128,7 +143,7 @@ def main() -> int:
     args = ap.parse_args()
 
     client = LastWarFarmClient()
-    today = dt.datetime.now(dt.timezone.utc).date()
+    today = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(hours=2)).date()  # in-game day
     ranked, skipped, info = compute(client, today, set(args.excuse))
 
     print(f"Kick rank for {info['from']} to {info['to']} "
@@ -148,7 +163,11 @@ def main() -> int:
         print(f"No custom event with id {args.event_id}", file=sys.stderr)
         return 1
     metrics = {m["name"].lower(): m["id"] for m in event["metrics"]}
-    uploads = [(args.rank_metric, "rank"), (args.score_metric, "score")]
+    if len(metrics) == 1:
+        # One metric on the event: upload the score to it.
+        uploads = [(next(iter(metrics)), "score")]
+    else:
+        uploads = [(args.rank_metric, "rank"), (args.score_metric, "score")]
     missing = [name for name, _ in uploads if name.lower() not in metrics]
     if missing:
         print(f"Event '{event['name']}' has no metric named {missing}. "
