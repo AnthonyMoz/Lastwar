@@ -116,7 +116,7 @@ needs two metrics named `rank` and `score`.
 ## Train list
 
 ```sh
-python reports/train_list.py --type push --days 6 --word VEGEMITE --gag "One-line Merv gag."
+python reports/train_list.py --type push --days 6 --word VEGEMITE --gag "One-line Merv gag." --example "VEGEMITE on toast"
 python reports/train_list.py --type save                      # Mon-Fri, a day over 10M counts zero
 python reports/train_list.py --type push --swap "Name A" "Name B" --exclude "Name C"
 node reports/render.js reports/out/train_<monday>.html reports/out/train_<monday>.png

@@ -1,7 +1,7 @@
 """Work out the weekly Train list and make the RI5E graphic and Merv announcement.
 
 Usage:
-  python reports/train_list.py --type push --days 6 --word VEGEMITE --gag "..."
+  python reports/train_list.py --type push --days 6 --word VEGEMITE --gag "..." --example "..."
   python reports/train_list.py --type save                 # Mon-Fri, days over 10M count zero
   python reports/train_list.py --week-start 2026-11-16 --swap "Name A" "Name B"
 
@@ -79,10 +79,11 @@ def merv_word(week: str, word: str | None) -> str:
     return word
 
 
-def announcement(top: list[dict], gag: str, word: str) -> str:
-    lines = ["🚂 RI5E TRAIN TIME 🚂", f"Merv here. {gag}", "Conductor / VIP"]
+def announcement(top: list[dict], gag: str, word: str, example: str | None) -> str:
+    lines = ["RI5E TRAIN TIME", f"Merv here. {gag}", "", "Conductor / VIP"]
     lines += [f"{DAYS[i]}: {top[i]['name']} / {top[i + 7]['name']}" for i in range(7)]
-    lines.append(f"Merv's word: {word}. Post it if you read this 🩴")
+    lines += ["", f"Merv's word: {word}", "",
+              f"Post {word} in the alliance chat. For example: {example or word + ', read it!'}"]
     return "\n".join(lines)
 
 
@@ -171,6 +172,7 @@ def main() -> int:
     ap.add_argument("--swap", nargs=2, action="append", default=[], metavar=("A", "B"), help="Swap two names' slots")
     ap.add_argument("--gag", default="Never on the list, always at the servo.", help="Merv's one-liner")
     ap.add_argument("--word", help="Merv's word (default: next unused idea)")
+    ap.add_argument("--example", help="Example of what members could post with the word")
     ap.add_argument("--banner", help="Optional gold banner text")
     ap.add_argument("--out", type=Path, default=Path("reports/out"))
     args = ap.parse_args()
@@ -210,7 +212,7 @@ def main() -> int:
 
     span = "MON-SAT" if days == 6 else "MON-FRI"
     subtitle = f"{args.type.upper()} WEEK  •  TOP 14  •  {span} {'TOTALS' if args.type == 'push' else 'CAPPED'}"
-    text = announcement(top, args.gag, merv_word(monday.isoformat(), args.word))
+    text = announcement(top, args.gag, merv_word(monday.isoformat(), args.word), args.example)
     args.out.mkdir(parents=True, exist_ok=True)
     html_path = args.out / f"train_{monday}.html"
     html_path.write_text(render(top, subtitle, args.banner), encoding="utf-8")
