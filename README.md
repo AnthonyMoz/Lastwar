@@ -112,3 +112,19 @@ shortfall against the weekly target, 10% falling power. Rank 1 is most at risk.
 Members who joined in the last 14 days, or who have no VS record on more than a
 quarter of days (usually away or rejoined), are not ranked. The custom event
 needs two metrics named `rank` and `score`.
+
+## Train list
+
+```sh
+python reports/train_list.py --type push --days 6 --word VEGEMITE --gag "One-line Merv gag."
+python reports/train_list.py --type save                      # Mon-Fri, a day over 10M counts zero
+python reports/train_list.py --type push --swap "Name A" "Name B" --exclude "Name C"
+node reports/render.js reports/out/train_<monday>.html reports/out/train_<monday>.png
+```
+
+Ranks active members by VS points for the last full week (or `--week-start`).
+Ranks 1-7 conduct Mon-Sun and ranks 8-14 ride VIP. Prints the ranking, the gap
+at the cut, near-ties, excused or part-week members and anyone skipped because
+they left, then writes the RI5E graphic and the Merv announcement with its
+character count. Merv's words are recorded in `reports/merv_words.txt` and a
+used word is refused.

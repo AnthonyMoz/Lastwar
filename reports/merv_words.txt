@@ -1,0 +1,8 @@
+# Merv words already used: <week Monday> <word>. Never reuse one.
+2026-01-01 BILLABONG
+2026-01-01 ESKY
+2026-01-01 SERVO
+2026-01-01 DUNNY
+2026-01-01 SMOKO
+2026-01-01 MULLET
+2026-11-16 VEGEMITE
