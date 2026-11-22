@@ -83,7 +83,7 @@ def announcement(top: list[dict], gag: str, word: str, example: str | None) -> s
     lines = ["RI5E TRAIN TIME", f"Merv here. {gag}", "", "Conductor / VIP"]
     lines += [f"{DAYS[i]}: {top[i]['name']} / {top[i + 7]['name']}" for i in range(7)]
     lines += ["", f"Merv's word: {word}", "",
-              f"Post {word} in the alliance chat. For example: {example or word + ', read it!'}"]
+              f"Post {word} in the alliance chat." + (f' "{example}"' if example else "")]
     return "\n".join(lines)
 
 
@@ -172,7 +172,7 @@ def main() -> int:
     ap.add_argument("--swap", nargs=2, action="append", default=[], metavar=("A", "B"), help="Swap two names' slots")
     ap.add_argument("--gag", default="Never on the list, always at the servo.", help="Merv's one-liner")
     ap.add_argument("--word", help="Merv's word (default: next unused idea)")
-    ap.add_argument("--example", help="Example of what members could post with the word")
+    ap.add_argument("--example", help="A longer, funny sample post using the word (shown in quotes)")
     ap.add_argument("--banner", help="Optional gold banner text")
     ap.add_argument("--out", type=Path, default=Path("reports/out"))
     args = ap.parse_args()
