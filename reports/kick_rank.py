@@ -65,7 +65,12 @@ def last_before(series, boundary):
     return value
 
 
-def compute(client: LastWarFarmClient, today: dt.date, excuse: set[str]):
+def compute(client: LastWarFarmClient, today: dt.date, excuse: set[str], as_of: bool = False):
+    """Rank members as of the in-game day `today`.
+
+    With as_of=True the roster is who was in the alliance on that day (joined
+    before it and not left before it), so past dates can be re-created.
+    """
     alliance = client.get_alliance()["data"]
     s = alliance["settings"]
     vs_min = int(s["duelThreshold"])
@@ -75,7 +80,13 @@ def compute(client: LastWarFarmClient, today: dt.date, excuse: set[str]):
     start_iso, end_iso = weeks[0].isoformat(), end.isoformat()
     grace_from = (today - dt.timedelta(days=GRACE_DAYS)).isoformat()
 
-    members = [m for m in client.list_members()["data"] if m["status"] == "ACTIVE"]
+    if as_of:
+        day_iso = today.isoformat()
+        members = [m for m in client.list_members()["data"]
+                   if m["joinedAt"][:10] <= day_iso
+                   and (m["leftAt"] is None or m["leftAt"][:10] >= day_iso)]
+    else:
+        members = [m for m in client.list_members()["data"] if m["status"] == "ACTIVE"]
     duels = [d for d in client.export_duels()["data"] if start_iso <= d["scoredOn"] < end_iso]
     vs_days = sorted({d["scoredOn"] for d in duels})
     vs = defaultdict(dict)
@@ -140,11 +151,22 @@ def main() -> int:
     ap.add_argument("--commit", action="store_true", help="Actually upload (default: preview)")
     ap.add_argument("--excuse", action="append", default=[], help="Name or member id to skip")
     ap.add_argument("--top", type=int, default=10, help="How many to print")
+    ap.add_argument("--as-of", type=dt.date.fromisoformat,
+                    help="Re-create the ranking for a past in-game day (YYYY-MM-DD)")
+    ap.add_argument("--csv", type=Path, help="Also write memberId,name,value for import")
     args = ap.parse_args()
 
     client = LastWarFarmClient()
-    today = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(hours=2)).date()  # in-game day
-    ranked, skipped, info = compute(client, today, set(args.excuse))
+    today = args.as_of or (dt.datetime.now(dt.timezone.utc) - dt.timedelta(hours=2)).date()
+    ranked, skipped, info = compute(client, today, set(args.excuse), as_of=bool(args.as_of))
+    if args.csv:
+        import csv
+        with args.csv.open("w", newline="", encoding="utf-8-sig") as f:
+            w = csv.writer(f)
+            w.writerow(["memberId", "name", "value"])
+            for r in ranked:
+                w.writerow([r["memberId"], r["name"], int(round(r["score"]))])
+        print(f"Wrote {args.csv}")
 
     print(f"Kick rank for {info['from']} to {info['to']} "
           f"(VS minimum {info['vsMin']:,}, donation target {info['donationTarget']:,}/week)")
